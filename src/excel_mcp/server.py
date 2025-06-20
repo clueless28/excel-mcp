@@ -542,6 +542,57 @@ def validate_excel_range(
         raise
 
 @mcp.tool()
+def filter_rows_in_excel(
+    filepath: str,
+    sheet_name: str,
+    column_index: int,
+    value: Any,
+    include_matches: bool = True,
+    start_cell: str = "A1",
+    end_cell: str = None
+) -> str:
+    """
+    Filter rows based on a column's value and return filtered data as JSON.
+    """
+    try:
+        full_path = get_excel_path(filepath)
+        from excel_mcp.data import read_excel_range, filter_rows_by_value
+        data = read_excel_range(full_path, sheet_name, start_cell, end_cell)
+        filtered = filter_rows_by_value(data, column_index, value, include_matches)
+        
+        import json
+        return json.dumps({"filtered_rows": filtered}, indent=2, default=str)
+    except Exception as e:
+        logger.error(f"Error filtering rows: {e}")
+        raise
+
+@mcp.tool()
+def delete_rows_in_excel(
+    filepath: str,
+    sheet_name: str,
+    column_index: int,
+    value: Any,
+    start_cell: str = "A1",
+    end_cell: str = None
+) -> str:
+    """
+    Delete rows that match a column value and update Excel file.
+    """
+    try:
+        full_path = get_excel_path(filepath)
+        from excel_mcp.data import read_excel_range, delete_rows_by_value, write_data
+
+        data = read_excel_range(full_path, sheet_name, start_cell, end_cell)
+        updated_data = delete_rows_by_value(data, column_index, value)
+        result = write_data(full_path, sheet_name, updated_data, start_cell)
+        return result["message"]
+    except Exception as e:
+        logger.error(f"Error deleting rows: {e}")
+        raise
+
+
+
+@mcp.tool()
 def get_data_validation_info(
     filepath: str,
     sheet_name: str
