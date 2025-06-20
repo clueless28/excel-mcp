@@ -275,3 +275,89 @@ def read_excel_range_with_metadata(
     except Exception as e:
         logger.error(f"Failed to read Excel range with metadata: {e}")
         raise DataError(str(e))
+
+
+from mcp import mcp_command  # if not already imported
+
+@mcp_command
+def filter_rows(args: Dict[str, Any]) -> list[dict[str, Any]]:
+    """
+    Filter rows in the Excel sheet where column == value.
+    Args:
+        path: Excel file path
+        sheet: Sheet name
+        column: Column name to filter
+        value: Value to match
+    Returns:
+        List of matching rows as dicts
+    """
+    try:
+        path = args["path"]
+        sheet = args["sheet"]
+        column = args["column"]
+        value = args["value"]
+
+        wb = load_workbook(path)
+        ws = wb[sheet]
+
+        headers = [cell.value for cell in ws[1]]
+        if column not in headers:
+            raise DataError(f"Column '{column}' not found")
+
+        col_idx = headers.index(column)
+        results = []
+
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if str(row[col_idx]) == str(value):
+                results.append(dict(zip(headers, row)))
+
+        wb.close()
+        return results
+
+    except Exception as e:
+        logger.error(f"filter_rows failed: {e}")
+        raise DataError(str(e))
+
+@mcp_command
+def delete_rows(args: Dict[str, Any]) -> dict[str, Any]:
+    """
+    Delete rows in Excel where column == value.
+    Args:
+        path: Excel file path
+        sheet: Sheet name
+        column: Column name
+        value: Value to delete
+    Returns:
+        Dict with remaining row count
+    """
+    try:
+        path = args["path"]
+        sheet = args["sheet"]
+        column = args["column"]
+        value = args["value"]
+
+        wb = load_workbook(path)
+        ws = wb[sheet]
+
+        headers = [cell.value for cell in ws[1]]
+        if column not in headers:
+            raise DataError(f"Column '{column}' not found")
+
+        col_idx = headers.index(column)
+
+        keep = [row for row in ws.iter_rows(min_row=2, values_only=True)
+                if str(row[col_idx]) != str(value)]
+
+        ws.delete_rows(2, ws.max_row)
+        for row in keep:
+            ws.append(row)
+
+        wb.save(path)
+        wb.close()
+
+        return {"deleted": "ok", "rows_remaining": len(keep)}
+
+    except Exception as e:
+        logger.error(f"delete_rows failed: {e}")
+        raise DataError(str(e))
+
