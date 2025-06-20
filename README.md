@@ -1,6 +1,4 @@
-<p align="center">
-  <img src="assets/logo.png" alt="Excel MCP Server Logo" width="300"/>
-</p>
+
 
 
 A Model Context Protocol (MCP) server that lets you manipulate Excel files without needing Microsoft Excel installed. Create, read, and modify Excel workbooks with your AI agent.
